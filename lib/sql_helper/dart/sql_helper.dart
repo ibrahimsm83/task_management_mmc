@@ -5,7 +5,7 @@ class SQLHelper {
   //creating database table and table name is items
   static Future<void> createTables(sql.Database database) async {
     await database.execute("""CREATE TABLE tasks(
-    id INTEGER PRIMARY KEY,AUTOINCREMENT NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     title TEXT,
     description TEXT,
     dueDate TEXT,
