@@ -1,6 +1,8 @@
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taskmanagment/data/web_services/task_services.dart';
 import 'package:taskmanagment/pages/bloc/task_state.dart';
 import 'package:taskmanagment/sql_helper/dart/sql_helper.dart';
 
@@ -13,7 +15,8 @@ class TaskManagementBloc extends Bloc<TaskEvent, TaskState> {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController statusController = TextEditingController();
   final TextEditingController dueDateController = TextEditingController();
-
+            TaskServices taskServices=TaskServices();
+  final FirebaseFirestore db = FirebaseFirestore.instance;
    List<Map<String,dynamic>> tasksList=[];
 
    TaskManagementBloc() : super( TaskInitial()) {
@@ -32,9 +35,15 @@ class TaskManagementBloc extends Bloc<TaskEvent, TaskState> {
       ),
     );
     final data= await SQLHelper.getTasks();
+     //final firebasedata= taskServices.getDataFromFirebase();
+    // print("----dfs-fsd-f-sd-f-s");
+    // print(firebasedata.toString());
     if(data !=null){
       tasksList=data;
     }
+    print("------ddd---------1--");
+    print(tasksList);
+    print("------ddd--------2---");
     emit(
       state.updateState(
         isLoading: false,
@@ -54,7 +63,7 @@ class TaskManagementBloc extends Bloc<TaskEvent, TaskState> {
             descriptionController.text,
             dueDateController.text,
             statusController.text);
-
+    taskServices.updateDataInFirebase( titleController.text, descriptionController.text,  statusController.text,event.id);
     emit(
       state.updateState(
         isLoading: false,
@@ -75,11 +84,17 @@ class TaskManagementBloc extends Bloc<TaskEvent, TaskState> {
         isLoading: true,
       ),
     );
+    final  docRef = db.collection('tasks').doc();
+    print(docRef.id);
     await SQLHelper.createItem(
+                  docRef.id,
               titleController.text,
             descriptionController.text,
               dueDateController.text,
              statusController.text);
+    print("-----------data added successfully------1------");
+    taskServices.addDataInFirebase( docRef,titleController.text, descriptionController.text, statusController.text,);
+    print("-----------data added successfully----------2--");
     add(GetTaskEvent());
     clearController();
     emit(
@@ -95,14 +110,19 @@ class TaskManagementBloc extends Bloc<TaskEvent, TaskState> {
       ),
     );
     await SQLHelper.deleteTask(event.id);
-    ScaffoldMessenger.of(screenKey.currentContext!).showSnackBar(
-        const SnackBar(content: Text("Successfully Deleted a Task")));
+print("--------_Delete-----------1");
     emit(
       state.updateState(
         isLoading: false,
       ),
     );
+    ScaffoldMessenger.of(screenKey.currentContext!).showSnackBar(
+        const SnackBar(content: Text("Successfully Deleted a Task")));
     add(GetTaskEvent());
+    await taskServices.deleteDataInFirebase(event.id);
+    print("--------_Delete-----------2");
+
+
   }
 
 
